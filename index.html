@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PDF/DOCX → Markdown</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>PDF / DOCX → Markdown</h1>
+      <p class="subtitle">Runs entirely in your browser. Nothing is uploaded anywhere.</p>
+    </header>
+
+    <main class="main">
+      <section class="converter">
+        <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload a PDF or DOCX file">
+          <input id="file-input" type="file" accept=".pdf,.docx" hidden />
+          <p class="drop-zone-text">Drag &amp; drop a PDF or DOCX file, or <span class="link">click to browse</span></p>
+        </div>
+
+        <label class="option-toggle">
+          <input id="omit-image-refs-checkbox" type="checkbox" />
+          Omit image references entirely (DOCX only) — unchecked leaves a "[Image: ...]" placeholder where each image was
+        </label>
+
+        <label class="option-toggle">
+          <input id="strip-headers-footers-checkbox" type="checkbox" checked />
+          Strip repeated headers/footers (PDF only) — unchecked keeps every line exactly as extracted
+        </label>
+
+        <div id="selected-file" class="selected-file" hidden>
+          <span class="selected-file-name" id="selected-file-name"></span>
+          <div class="selected-file-actions">
+            <button id="start-conversion-btn" class="btn btn-primary">Start conversion</button>
+            <button id="change-file-btn" class="btn btn-secondary">Choose a different file</button>
+          </div>
+        </div>
+
+        <div id="status" class="status" hidden>
+          <span id="status-text"></span>
+          <button id="cancel-btn" class="btn btn-text">Cancel</button>
+        </div>
+
+        <div id="result" class="result" hidden>
+          <div class="result-meta">
+            <span id="result-filename" class="result-filename"></span>
+            <span id="result-timestamp" class="result-timestamp"></span>
+          </div>
+          <div id="size-stat" class="size-stat" hidden></div>
+          <div id="warnings" class="warnings" hidden></div>
+          <textarea id="preview" class="preview" readonly></textarea>
+          <div class="result-actions">
+            <button id="download-btn" class="btn btn-primary">Download .md</button>
+            <button id="new-file-btn" class="btn btn-secondary">Convert another file</button>
+          </div>
+        </div>
+
+        <div id="error" class="error" hidden>
+          <p id="error-message"></p>
+          <button id="error-retry-btn" class="btn btn-secondary">Try another file</button>
+        </div>
+      </section>
+
+      <aside class="history-panel">
+        <div class="history-header">
+          <h2>History</h2>
+          <button id="clear-history-btn" class="btn btn-text">Clear all</button>
+        </div>
+        <ul id="history-list" class="history-list"></ul>
+        <p id="history-empty" class="history-empty">No conversions yet.</p>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Vendor libraries (classic scripts — expose globals, loaded before our modules) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown@7.2.0/dist/turndown.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown-plugin-gfm@1.0.2/dist/turndown-plugin-gfm.js"></script>
+  <script src="js/vendor-config.js"></script>
+
+  <!-- App modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
