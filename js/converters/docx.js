@@ -44,23 +44,66 @@ function unwrapParagraphsInTableCells(container) {
   });
 }
 
+const MIME_TO_EXTENSION = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/bmp": "bmp",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+  "image/tiff": "tiff",
+  "image/x-emf": "emf",
+  "image/x-wmf": "wmf",
+};
+
+// Mammoth embeds every image as a base64 `data:` URI on the <img> itself, so
+// extracting the original bytes is just decoding that URI — no separate
+// fetch or archive-walking needed.
+function dataUriToBlob(dataUri) {
+  const match = /^data:([^;]+);base64,(.*)$/s.exec(dataUri || "");
+  if (!match) return null;
+  const [, mimeType, base64] = match;
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return { blob: new Blob([bytes], { type: mimeType }), mimeType };
+}
+
 // Mammoth's default image handling inlines every image as a base64 data URI
 // directly in the HTML — for a document with several screenshots, that's
 // tens/hundreds of KB of unreadable base64 text per image, dwarfing the
 // actual document content and making the output look completely broken.
-// Always strip the base64 itself; the only choice is what (if anything)
-// replaces each image — a short text placeholder, or nothing at all.
-function stripEmbeddedImages(container, omitPlaceholders) {
-  const images = container.querySelectorAll("img");
-  images.forEach((img) => {
+// Always strip the base64 itself out of the markdown; the only choice is
+// what (if anything) replaces each image there — a short text placeholder,
+// or nothing at all. Independently of that, the original bytes can be
+// pulled out for a separate images.zip before the <img> is discarded.
+function stripEmbeddedImages(container, { omitPlaceholders, extractImages }) {
+  const imgElements = container.querySelectorAll("img");
+  const extracted = [];
+  imgElements.forEach((img, index) => {
+    let filename = null;
+    if (extractImages) {
+      const decoded = dataUriToBlob(img.getAttribute("src"));
+      if (decoded) {
+        const ext = MIME_TO_EXTENSION[decoded.mimeType] || "bin";
+        filename = `image-${index + 1}.${ext}`;
+        extracted.push({ filename, blob: decoded.blob });
+      }
+    }
     if (omitPlaceholders) {
       img.remove();
       return;
     }
     const alt = (img.getAttribute("alt") || "").trim();
-    img.replaceWith(document.createTextNode(`[Image: ${alt || "embedded image"}]`));
+    // When the image was also exported to the zip, point the placeholder at
+    // its exact filename rather than a generic label, so the two outputs
+    // can be cross-referenced. Falls back to alt text / a generic label
+    // whenever extraction is off or this particular image couldn't be
+    // decoded (e.g. an unsupported embed format).
+    const placeholderLabel = filename && alt ? `${filename} — ${alt}` : filename || alt || "embedded image";
+    img.replaceWith(document.createTextNode(`[Image: ${placeholderLabel}]`));
   });
-  return images.length;
+  return { count: imgElements.length, images: extracted };
 }
 
 // A paragraph or table cell that contained only an image collapses to empty
@@ -81,13 +124,15 @@ function throwIfCancelled(isCancelled) {
 
 /**
  * @param {ArrayBuffer} arrayBuffer
- * @param {{omitImageRefs?: boolean, isCancelled?: () => boolean}} [options]
+ * @param {{omitImageRefs?: boolean, extractImages?: boolean, isCancelled?: () => boolean}} [options]
  *   omitImageRefs: leave no trace of images at all, instead of the default
  *   "[Image: ...]" placeholder.
- * @returns {Promise<{markdown: string, warnings: string[]}>}
+ *   extractImages: pull the original image bytes out separately so they can
+ *   be offered as a downloadable zip, independent of the placeholder choice.
+ * @returns {Promise<{markdown: string, warnings: string[], images: {filename: string, blob: Blob}[]}>}
  */
 export async function convertDocxToMarkdown(arrayBuffer, options = {}) {
-  const { omitImageRefs = false, isCancelled } = options;
+  const { omitImageRefs = false, extractImages = false, isCancelled } = options;
   throwIfCancelled(isCancelled);
   // mammoth.convertToHtml() is one atomic call with no mid-flight checkpoint —
   // Cancel can only take effect before it starts or once it resolves, not
@@ -100,7 +145,10 @@ export async function convertDocxToMarkdown(arrayBuffer, options = {}) {
   container.innerHTML = html;
   promoteFirstRowToHeader(container);
   unwrapParagraphsInTableCells(container);
-  const imageCount = stripEmbeddedImages(container, omitImageRefs);
+  const { count: imageCount, images } = stripEmbeddedImages(container, {
+    omitPlaceholders: omitImageRefs,
+    extractImages,
+  });
 
   const turndownService = new TurndownService({
     headingStyle: "atx",
@@ -123,6 +171,9 @@ export async function convertDocxToMarkdown(arrayBuffer, options = {}) {
         : `${imageCount} embedded image${imageCount === 1 ? "" : "s"} replaced with a text placeholder to keep the file small and readable.`
     );
   }
+  if (extractImages && images.length > 0) {
+    warnings.push(`${images.length} embedded image${images.length === 1 ? "" : "s"} available to download separately.`);
+  }
 
-  return { markdown, warnings };
+  return { markdown, warnings, images };
 }

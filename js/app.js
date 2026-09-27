@@ -14,10 +14,13 @@ function sourceTypeFor(filename) {
   return filename.toLowerCase().endsWith(".pdf") ? "pdf" : "docx";
 }
 
-function markdownFilenameFor(originalName) {
+function baseNameFor(originalName) {
   const dotIndex = originalName.lastIndexOf(".");
-  const base = dotIndex > 0 ? originalName.slice(0, dotIndex) : originalName;
-  return `${base}.md`;
+  return dotIndex > 0 ? originalName.slice(0, dotIndex) : originalName;
+}
+
+function markdownFilenameFor(originalName) {
+  return `${baseNameFor(originalName)}.md`;
 }
 
 function refreshHistory() {
@@ -37,15 +40,18 @@ async function convertFile(file) {
 
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const { markdown, warnings } =
+    const extractImages = ui.getExtractImages();
+    const { markdown, warnings, images } =
       sourceType === "pdf"
         ? await convertPdfToMarkdown(arrayBuffer, {
             onProgress: (page, total) => ui.updateProgress(page, total),
             stripHeadersFooters: ui.getStripHeadersFooters(),
+            extractImages,
             isCancelled: () => token.cancelled,
           })
         : await convertDocxToMarkdown(arrayBuffer, {
             omitImageRefs: ui.getOmitImageRefs(),
+            extractImages,
             isCancelled: () => token.cancelled,
           });
 
@@ -58,12 +64,14 @@ async function convertFile(file) {
       return;
     }
 
+    const hadExtractedImages = Boolean(images && images.length > 0);
     const createdAt = new Date().toISOString();
     const saved = storage.saveEntry({
       filename: file.name,
       sourceType,
       markdown,
       originalSizeBytes: file.size,
+      hadExtractedImages,
     });
 
     currentResult = {
@@ -73,6 +81,12 @@ async function convertFile(file) {
       markdown,
       warnings,
       originalSizeBytes: file.size,
+      // Extracted image bytes are kept in memory only, not persisted to
+      // localStorage history — Blobs aren't JSON-serializable, and the
+      // history store's small quota (storage.js) can't afford raw image
+      // bytes on top of the markdown it already keeps per entry.
+      images: images || [],
+      hadExtractedImages,
     };
 
     ui.showResult(currentResult);
@@ -95,17 +109,28 @@ async function convertFile(file) {
   }
 }
 
-function downloadCurrentResult() {
-  if (!currentResult) return;
-  const blob = new Blob([currentResult.markdown], { type: "text/markdown" });
+function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = markdownFilenameFor(currentResult.filename);
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadCurrentResult() {
+  if (!currentResult) return;
+  triggerDownload(new Blob([currentResult.markdown], { type: "text/markdown" }), markdownFilenameFor(currentResult.filename));
+}
+
+async function downloadCurrentImages() {
+  if (!currentResult || !currentResult.images || currentResult.images.length === 0) return;
+  const zip = new JSZip();
+  currentResult.images.forEach((image) => zip.file(image.filename, image.blob));
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  triggerDownload(zipBlob, `${baseNameFor(currentResult.filename)}-images.zip`);
 }
 
 function init() {
@@ -116,6 +141,7 @@ function init() {
 
   ui.bindActions({
     onDownload: downloadCurrentResult,
+    onDownloadImages: downloadCurrentImages,
     onNewFile: () => {
       currentResult = null;
       ui.resetToIdle();

@@ -16,9 +16,11 @@ const resultEl = document.getElementById("result");
 const resultFilenameEl = document.getElementById("result-filename");
 const resultTimestampEl = document.getElementById("result-timestamp");
 const sizeStatEl = document.getElementById("size-stat");
+const imagesUnavailableNoticeEl = document.getElementById("images-unavailable-notice");
 const warningsEl = document.getElementById("warnings");
 const previewEl = document.getElementById("preview");
 const downloadBtn = document.getElementById("download-btn");
+const downloadImagesBtn = document.getElementById("download-images-btn");
 const newFileBtn = document.getElementById("new-file-btn");
 const errorEl = document.getElementById("error");
 const errorMessageEl = document.getElementById("error-message");
@@ -28,6 +30,7 @@ const historyEmptyEl = document.getElementById("history-empty");
 const clearHistoryBtn = document.getElementById("clear-history-btn");
 const omitImageRefsCheckbox = document.getElementById("omit-image-refs-checkbox");
 const stripHeadersFootersCheckbox = document.getElementById("strip-headers-footers-checkbox");
+const extractImagesCheckbox = document.getElementById("extract-images-checkbox");
 
 function hasAcceptedExtension(filename) {
   const lower = filename.toLowerCase();
@@ -88,8 +91,9 @@ export function bindFileInput(onFile) {
   });
 }
 
-export function bindActions({ onDownload, onNewFile, onRetry, onStartConversion, onChangeFile, onCancel }) {
+export function bindActions({ onDownload, onDownloadImages, onNewFile, onRetry, onStartConversion, onChangeFile, onCancel }) {
   downloadBtn.addEventListener("click", onDownload);
+  downloadImagesBtn.addEventListener("click", onDownloadImages);
   newFileBtn.addEventListener("click", onNewFile);
   errorRetryBtn.addEventListener("click", onRetry);
   startConversionBtn.addEventListener("click", onStartConversion);
@@ -125,6 +129,11 @@ export function getStripHeadersFooters() {
   return stripHeadersFootersCheckbox.checked;
 }
 
+/** Whether embedded images should be extracted for a separate downloadable ZIP (PDF & DOCX). */
+export function getExtractImages() {
+  return extractImagesCheckbox.checked;
+}
+
 /** Confirms with the user before proceeding on a large file. Returns boolean. */
 export function confirmLargeFile(sizeMb) {
   return confirm(
@@ -155,7 +164,7 @@ export function updateProgress(page, total) {
   statusTextEl.textContent = `Converting… processing page ${page} of ${total}`;
 }
 
-export function showResult({ filename, createdAt, markdown, warnings, originalSizeBytes }) {
+export function showResult({ filename, createdAt, markdown, warnings, originalSizeBytes, images, hadExtractedImages }) {
   dropZone.hidden = false;
   dropZone.classList.remove("disabled");
   selectedFileEl.hidden = true;
@@ -185,6 +194,22 @@ export function showResult({ filename, createdAt, markdown, warnings, originalSi
   } else {
     warningsEl.hidden = true;
   }
+
+  // History entries loaded from localStorage never carry `images` (see
+  // app.js) — hide the button rather than let it try to zip nothing.
+  const hasImages = images && images.length > 0;
+  if (hasImages) {
+    downloadImagesBtn.hidden = false;
+    downloadImagesBtn.textContent = `Download images (.zip, ${images.length})`;
+  } else {
+    downloadImagesBtn.hidden = true;
+  }
+
+  // hadExtractedImages is persisted per history entry even though the image
+  // bytes themselves aren't — it's what lets a reopened entry recognize that
+  // its markdown's [Image: ...] placeholders name files that no longer have
+  // a zip behind them, instead of silently going quiet about it.
+  imagesUnavailableNoticeEl.hidden = !hadExtractedImages || hasImages;
 
   resultEl.hidden = false;
 }

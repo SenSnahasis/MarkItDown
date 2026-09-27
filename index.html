@@ -30,6 +30,11 @@
           Strip repeated headers/footers (PDF only) — unchecked keeps every line exactly as extracted
         </label>
 
+        <label class="option-toggle">
+          <input id="extract-images-checkbox" type="checkbox" />
+          Also save embedded images as a downloadable ZIP (PDF &amp; DOCX)
+        </label>
+
         <div id="selected-file" class="selected-file" hidden>
           <span class="selected-file-name" id="selected-file-name"></span>
           <div class="selected-file-actions">
@@ -49,10 +54,15 @@
             <span id="result-timestamp" class="result-timestamp"></span>
           </div>
           <div id="size-stat" class="size-stat" hidden></div>
+          <div id="images-unavailable-notice" class="notice" hidden>
+            This conversion's images aren't available to re-download from history — convert the file again with
+            "extract images" checked if you need them.
+          </div>
           <div id="warnings" class="warnings" hidden></div>
           <textarea id="preview" class="preview" readonly></textarea>
           <div class="result-actions">
             <button id="download-btn" class="btn btn-primary">Download .md</button>
+            <button id="download-images-btn" class="btn btn-secondary" hidden>Download images (.zip)</button>
             <button id="new-file-btn" class="btn btn-secondary">Convert another file</button>
           </div>
         </div>
@@ -79,6 +89,7 @@
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/turndown@7.2.0/dist/turndown.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/turndown-plugin-gfm@1.0.2/dist/turndown-plugin-gfm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="js/vendor-config.js"></script>
 
   <!-- App modules -->

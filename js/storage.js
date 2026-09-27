@@ -71,7 +71,7 @@ export function getEntry(id) {
  * (e.g. localStorage disabled/full even after evicting everything) —
  * callers must not treat that as blocking the actual file download.
  */
-export function saveEntry({ filename, sourceType, markdown, originalSizeBytes }) {
+export function saveEntry({ filename, sourceType, markdown, originalSizeBytes, hadExtractedImages }) {
   const entry = {
     id: makeId(),
     filename,
@@ -80,6 +80,11 @@ export function saveEntry({ filename, sourceType, markdown, originalSizeBytes })
     markdown,
     sizeBytes: new Blob([markdown]).size,
     originalSizeBytes,
+    // Only a flag, never the image bytes themselves — those aren't kept in
+    // history (see app.js), but remembering that this conversion *had* them
+    // lets the UI warn that the markdown's [Image: ...] references point at
+    // files that can no longer be re-downloaded from this entry.
+    hadExtractedImages: !!hadExtractedImages,
   };
 
   const current = readRaw();

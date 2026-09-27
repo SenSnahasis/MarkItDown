@@ -201,7 +201,8 @@ body {
   white-space: nowrap;
 }
 
-.warnings {
+.warnings,
+.notice {
   background: var(--notice-bg);
   color: var(--notice);
   border-left: 3px solid var(--border);
