@@ -4,48 +4,116 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PDF/DOCX → Markdown</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
     <header class="app-header">
-      <h1>PDF / DOCX → Markdown</h1>
-      <p class="subtitle">Runs entirely in your browser. Nothing is uploaded anywhere.</p>
+      <div class="app-logo" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="38" height="38" rx="9" fill="var(--accent)" />
+          <path d="M12 9h10l6 6v16a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2z"
+                fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" />
+          <path d="M22 9v6h6" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" />
+          <path d="M13.5 26v-5l2.5 3 2.5-3v5M23 21v5M20.5 23.5l2.5 2.5 2.5-2.5"
+                fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="app-header-text">
+        <h1>PDF / DOCX → Markdown</h1>
+        <div class="subtitle-row">
+          <p class="subtitle">Converts documents for clean, AI-ready Markdown.</p>
+          <span class="privacy-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            100% local — nothing uploaded
+          </span>
+        </div>
+      </div>
+      <button id="theme-toggle-btn" class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle dark mode">
+        <span class="theme-toggle-track">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 16a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1Zm9-7a1 1 0 0 1-1 1h-1a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1ZM5 12a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1Zm13.07-6.07a1 1 0 0 1 0 1.41l-.7.71a1 1 0 1 1-1.42-1.42l.71-.7a1 1 0 0 1 1.41 0ZM7.05 16.95a1 1 0 0 1 0 1.41l-.71.71a1 1 0 0 1-1.41-1.41l.7-.71a1 1 0 0 1 1.42 0Zm11.02 2.12a1 1 0 0 1-1.41 0l-.71-.7a1 1 0 1 1 1.41-1.42l.71.71a1 1 0 0 1 0 1.41ZM7.05 7.05a1 1 0 0 1-1.42 0l-.7-.71a1 1 0 0 1 1.41-1.41l.71.7a1 1 0 0 1 0 1.42ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.742 13.045a8.088 8.088 0 0 1-2.077.273c-4.469 0-8.09-3.622-8.09-8.09 0-1.165.25-2.27.69-3.268a.75.75 0 0 0-.89-1.02C6.343 2.3 3.25 6.24 3.25 10.98c0 5.385 4.365 9.75 9.75 9.75 3.937 0 7.33-2.333 8.878-5.69a.75.75 0 0 0-1.136-.995Z"/></svg>
+        </span>
+        <span class="theme-toggle-knob"></span>
+      </button>
     </header>
 
     <main class="main">
       <section class="converter">
-        <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload a PDF or DOCX file">
-          <input id="file-input" type="file" accept=".pdf,.docx" hidden />
-          <p class="drop-zone-text">Drag &amp; drop a PDF or DOCX file, or <span class="link">click to browse</span></p>
+        <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload one or more PDF or DOCX files">
+          <input id="file-input" type="file" accept=".pdf,.docx" multiple hidden />
+          <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 18a4.5 4.5 0 0 1-1-8.9 5.5 5.5 0 0 1 10.6-2A4.5 4.5 0 0 1 17 18" />
+            <path d="M12 12v7" />
+            <path d="m9 15 3-3 3 3" />
+          </svg>
+          <p class="drop-zone-text">Drag &amp; drop one or more PDF/DOCX files, or <span class="link">click to browse</span></p>
+          <p class="drop-zone-hint">PDF or Word documents · multiple files supported</p>
         </div>
 
-        <label class="option-toggle">
-          <input id="omit-image-refs-checkbox" type="checkbox" />
-          Omit image references entirely (DOCX only) — unchecked leaves a "[Image: ...]" placeholder where each image was
-        </label>
+        <fieldset class="options">
+          <legend class="options-legend">Options</legend>
 
-        <label class="option-toggle">
-          <input id="strip-headers-footers-checkbox" type="checkbox" checked />
-          Strip repeated headers/footers (PDF only) — unchecked keeps every line exactly as extracted
-        </label>
+          <label class="option-toggle">
+            <span class="option-toggle-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+            </span>
+            <input id="omit-image-refs-checkbox" type="checkbox" />
+            <span class="option-toggle-text">
+              <span class="option-toggle-label">Omit image references</span>
+              <span class="option-toggle-desc">DOCX only — unchecked leaves a "[Image: ...]" placeholder where each image was</span>
+            </span>
+          </label>
 
-        <label class="option-toggle">
-          <input id="extract-images-checkbox" type="checkbox" />
-          Also save embedded images as a downloadable ZIP (PDF &amp; DOCX)
-        </label>
+          <label class="option-toggle">
+            <span class="option-toggle-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 6v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6M4 6l2-3h12l2 3"/><path d="M9 11h6"/></svg>
+            </span>
+            <input id="strip-headers-footers-checkbox" type="checkbox" checked />
+            <span class="option-toggle-text">
+              <span class="option-toggle-label">Strip repeated headers/footers</span>
+              <span class="option-toggle-desc">PDF only — unchecked keeps every line exactly as extracted</span>
+            </span>
+          </label>
+
+          <label class="option-toggle">
+            <span class="option-toggle-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/><path d="M1 4h22v4H1z"/><path d="M10 12h4"/></svg>
+            </span>
+            <input id="extract-images-checkbox" type="checkbox" />
+            <span class="option-toggle-text">
+              <span class="option-toggle-label">Save embedded images</span>
+              <span class="option-toggle-desc">PDF &amp; DOCX — also downloadable as a separate ZIP</span>
+            </span>
+          </label>
+        </fieldset>
 
         <div id="selected-file" class="selected-file" hidden>
           <span class="selected-file-name" id="selected-file-name"></span>
           <div class="selected-file-actions">
-            <button id="start-conversion-btn" class="btn btn-primary">Start conversion</button>
+            <button id="start-conversion-btn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Start conversion
+            </button>
             <button id="change-file-btn" class="btn btn-secondary">Choose a different file</button>
           </div>
         </div>
 
         <div id="status" class="status" hidden>
-          <span id="status-text"></span>
-          <button id="cancel-btn" class="btn btn-text">Cancel</button>
+          <div class="status-row">
+            <span id="status-text"></span>
+            <button id="cancel-btn" class="btn btn-text">Cancel</button>
+          </div>
+          <div class="progress-track">
+            <div id="status-progress-fill" class="progress-fill indeterminate"></div>
+          </div>
         </div>
 
         <div id="result" class="result" hidden>
@@ -55,33 +123,71 @@
           </div>
           <div id="size-stat" class="size-stat" hidden></div>
           <div id="images-unavailable-notice" class="notice" hidden>
-            This conversion's images aren't available to re-download from history — convert the file again with
-            "extract images" checked if you need them.
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <span>This conversion's images aren't available to re-download from history — convert the file again with
+            "extract images" checked if you need them.</span>
           </div>
           <div id="warnings" class="warnings" hidden></div>
           <textarea id="preview" class="preview" readonly></textarea>
           <div class="result-actions">
-            <button id="download-btn" class="btn btn-primary">Download .md</button>
-            <button id="download-images-btn" class="btn btn-secondary" hidden>Download images (.zip)</button>
-            <button id="new-file-btn" class="btn btn-secondary">Convert another file</button>
+            <button id="download-btn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download .md
+            </button>
+            <button id="copy-btn" class="btn btn-secondary btn-icon-copy">Copy to clipboard</button>
+            <button id="download-bundle-btn" class="btn btn-secondary btn-icon-zip" hidden>Download bundle (.zip)</button>
+            <button id="new-file-btn" class="btn btn-text">Convert another file</button>
           </div>
         </div>
 
         <div id="error" class="error" hidden>
-          <p id="error-message"></p>
-          <button id="error-retry-btn" class="btn btn-secondary">Try another file</button>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          <div class="error-body">
+            <p id="error-message"></p>
+            <button id="error-retry-btn" class="btn btn-secondary">Try another file</button>
+          </div>
+        </div>
+
+        <div id="batch-panel" class="batch-panel" hidden>
+          <div class="batch-header">
+            <h3>Files queued (<span id="batch-count">0</span>)</h3>
+            <button id="batch-clear-btn" class="btn btn-text btn-text-danger">Clear</button>
+          </div>
+          <ul id="batch-list" class="batch-list"></ul>
+          <div class="batch-actions">
+            <button id="batch-start-btn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Convert all
+            </button>
+            <button id="batch-cancel-btn" class="btn btn-text" hidden>Cancel remaining</button>
+          </div>
+          <div id="batch-summary" class="batch-summary" hidden>
+            <p id="batch-summary-text"></p>
+            <div class="batch-summary-actions">
+              <button id="batch-download-all-btn" class="btn btn-primary" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download all (.zip)
+              </button>
+              <button id="batch-new-btn" class="btn btn-text">Convert more files</button>
+            </div>
+          </div>
         </div>
       </section>
 
       <aside class="history-panel">
         <div class="history-header">
           <h2>History</h2>
-          <button id="clear-history-btn" class="btn btn-text">Clear all</button>
+          <button id="clear-history-btn" class="btn btn-text btn-text-danger">Clear all</button>
         </div>
         <ul id="history-list" class="history-list"></ul>
         <p id="history-empty" class="history-empty">No conversions yet.</p>
       </aside>
     </main>
+
+    <footer class="app-footer">
+      <span id="app-version" class="app-version"></span>
+      <button id="reset-app-btn" class="btn btn-text btn-text-danger">Reset app data</button>
+    </footer>
   </div>
 
   <!-- Vendor libraries (classic scripts — expose globals, loaded before our modules) -->

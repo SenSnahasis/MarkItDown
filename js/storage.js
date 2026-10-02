@@ -3,6 +3,8 @@
 // reopened/re-downloaded without re-uploading the original file.
 
 const STORAGE_KEY = "pdf2md.history";
+const SETTINGS_KEY = "pdf2md.settings";
+const THEME_KEY = "pdf2md.theme";
 const MAX_ENTRIES = 20;
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024; // 4MB, conservative vs. the ~5-10MB per-origin quota
 const MAX_WRITE_RETRIES = 20;
@@ -102,6 +104,57 @@ export function deleteEntry(id) {
 export function clearAll() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore — nothing more we can do
+  }
+}
+
+/** Returns the last-saved option-toggle settings, or {} if none saved yet. */
+export function getSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveSettings(settings) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // ignore — non-fatal, just means the setting won't persist this time
+  }
+}
+
+/** Returns "light" | "dark" if the user explicitly picked one, otherwise null (follow the OS setting). */
+export function getTheme() {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    return value === "light" || value === "dark" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveTheme(theme) {
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // ignore — non-fatal, just means the choice won't persist this time
+  }
+}
+
+// Distinct from clearAll(): wipes the entire origin's localStorage, not just
+// this app's history key. Used by the footer's "Reset app data" button to
+// recover from a browser that's still holding onto state saved by an older
+// deployed version, rather than assuming today's code is the only thing that
+// ever wrote to this origin's storage.
+export function resetAll() {
+  try {
+    localStorage.clear();
   } catch {
     // ignore — nothing more we can do
   }
